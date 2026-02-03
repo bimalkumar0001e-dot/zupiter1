@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, Type, FunctionDeclaration } from '@google/genai';
 import { encode, decode, decodeAudioData } from '../utils/audioUtils';
 
@@ -92,6 +91,15 @@ export class GeminiLiveService {
           type: Type.OBJECT,
           properties: { facingMode: { type: Type.STRING, enum: ['user', 'environment'] } },
           required: ['facingMode']
+        }
+      },
+      {
+        name: 'setBuzzerState',
+        description: 'Turns the ultrasonic buzzer on or off.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: { on: { type: Type.BOOLEAN } },
+          required: ['on']
         }
       }
     ];

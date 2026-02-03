@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GeminiLiveService } from './services/geminiLive';
 import { SerialService } from './services/serialService';
@@ -6,7 +5,7 @@ import { LogEntry, ConnectionStatus, Point } from './types';
 import { encode } from './utils/audioUtils';
 import { 
   Video, Mic, Target, Zap, Cpu, Link, Link2Off, Activity, 
-  Settings2, ShieldAlert, Circle, LayoutGrid, Box, Focus, VideoIcon, CircleStop, MousePointer2, ScanSearch, Maximize2, Minimize2, RefreshCw, FlipHorizontal, Compass, Sparkles
+  Settings2, ShieldAlert, Circle, LayoutGrid, Box, Focus, VideoIcon, CircleStop, MousePointer2, ScanSearch, Maximize2, Minimize2, RefreshCw, FlipHorizontal, Compass, Sparkles, Volume2, VolumeX
 } from 'lucide-react';
 
 interface DetectedObject {
@@ -43,6 +42,7 @@ export default function App() {
   const [hapticSerial, setHapticSerial] = useState<string>("HAPTIC_0");
   const [laserPoint, setLaserPoint] = useState<Point>({ x: 0, y: 0 });
   const [isRecording, setIsRecording] = useState(false);
+  const [isBuzzerOn, setIsBuzzerOn] = useState(false);
   const [isVisionActive, setIsVisionActive] = useState(false);
   
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -291,6 +291,14 @@ export default function App() {
             await startCamera(mode);
             return `Switched to ${mode}`;
           }
+          if (name === 'setBuzzerState') {
+            if (!serialConnectedRef.current) return "Check glove connection first.";
+            const turnOn = !!args.on;
+            setIsBuzzerOn(turnOn);
+            serialService.current.write(turnOn ? "BUZZER_ON" : "BUZZER_OFF");
+            addLog(turnOn ? "Ultrasonic buzzer activated by voice." : "Ultrasonic buzzer deactivated by voice.", "system");
+            return `Buzzer turned ${turnOn ? 'ON' : 'OFF'}`;
+          }
           return "Tool executed";
         }
       );
@@ -352,6 +360,17 @@ export default function App() {
     }
   };
 
+  const handleBuzzerToggle = () => {
+    if (!serialConnectedRef.current) {
+        addLog("Connect glove first to use buzzer.", "system");
+        return;
+    }
+    const newState = !isBuzzerOn; 
+    setIsBuzzerOn(newState);
+    serialService.current.write(newState ? "BUZZER_ON" : "BUZZER_OFF");
+    addLog(newState ? "Ultrasonic buzzer activated." : "Ultrasonic buzzer deactivated.", "system");
+  };
+
   useEffect(() => {
     startCamera(facingMode);
     window.addEventListener('resize', updateVideoRect);
@@ -384,6 +403,16 @@ export default function App() {
             >
               {isRecording ? <CircleStop className="w-4 h-4" /> : <VideoIcon className="w-4 h-4" />}
               {isRecording ? 'REC' : 'START REC'}
+            </button>
+
+            <button 
+              onClick={handleBuzzerToggle}
+              className={`px-5 py-2.5 rounded-xl border flex items-center gap-3 transition-all uppercase tracking-widest text-[10px] font-black ${
+                isBuzzerOn ? 'bg-orange-500/10 border-orange-500/40 text-orange-500' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+              }`}
+            >
+              {isBuzzerOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {isBuzzerOn ? 'BUZZER ON' : 'BUZZER OFF'}
             </button>
 
             <button 
